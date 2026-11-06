@@ -145,7 +145,7 @@ footer{padding-block:clamp(60px,9vw,130px) 34px}
 .still *{animation:none!important}
 
 /* Responsive layout and progressive enhancement. */
-html{scroll-behavior:smooth;scroll-padding-top:96px}
+html{scroll-behavior:smooth;scroll-padding-top:calc(84px + env(safe-area-inset-top,0px))}
 .wrap{padding-left:max(clamp(20px,5.2vw,96px),env(safe-area-inset-left,0px));padding-right:max(clamp(20px,5.2vw,96px),env(safe-area-inset-right,0px))}
 main,section,.about .t,.row h3,.row p{min-width:0}
 section[id]{scroll-margin-top:0}
@@ -218,6 +218,7 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
   footer{padding-top:58px}
 }
 @media(max-width:700px){
+  html{scroll-padding-top:calc(69px + env(safe-area-inset-top,0px))}
   .site-header{padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:12px;mix-blend-mode:normal;color:var(--ink);background:var(--bg);border-bottom:1px solid var(--line);gap:12px}
   .site-header .logo{font-size:1.35rem;letter-spacing:-.045em}
   .js-ready .menu-toggle{width:44px;height:44px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);color:var(--ink);background:transparent;padding:10px;cursor:pointer}
@@ -245,6 +246,7 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
   .mail{font-size:1.7rem}
 }
 @media(max-height:520px) and (orientation:landscape){
+  html{scroll-padding-top:57px}
   .site-header{padding-block:6px}
   .hero{padding-top:94px}
   .site-nav{max-height:calc(100svh - 65px);overflow-y:auto}
