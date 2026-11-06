@@ -21,6 +21,8 @@
   let tiltX = 0;
   let tiltY = 0;
   let frame = 0;
+  let revealObserver = null;
+  const revealTargets = [...document.querySelectorAll('[data-reveal]')];
 
   body.classList.remove('no-js');
   body.classList.add('js-ready');
@@ -66,17 +68,18 @@
     frame = 0;
     if (!motion || document.hidden) return;
     if (finePointer.matches) cursor.style.transform = `translate3d(${pointerX}px, ${pointerY}px, 0)`;
-    if (!desktop.matches || !finePointer.matches) return;
+    const pointerMotion = desktop.matches && finePointer.matches;
     const hero = document.querySelector('.hero').getBoundingClientRect();
     const progress = Math.min(1, Math.max(0, -hero.top / Math.max(1, hero.height)));
-    rig.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) rotateZ(${progress * 18}deg)`;
+    rig.style.transform = `rotateX(${pointerMotion ? tiltX : 0}deg) rotateY(${pointerMotion ? tiltY : progress * 6}deg) rotateZ(${progress * (pointerMotion ? 18 : 12)}deg)`;
     const about = document.querySelector('.about').getBoundingClientRect();
     const ratio = Math.max(-1, Math.min(1, (innerHeight / 2 - about.top) / (innerHeight + about.height)));
     document.querySelectorAll('.art .p').forEach(piece => {
-      piece.style.translate = `0 ${-ratio * Number(piece.dataset.s) * 280}px`;
+      piece.style.translate = `0 ${-ratio * Number(piece.dataset.s) * (pointerMotion ? 280 : 160)}px`;
     });
     const beyond = document.querySelector('.beyond').getBoundingClientRect();
-    const glassY = Math.max(-35, Math.min(35, (innerHeight / 2 - beyond.top) * 0.045));
+    const range = pointerMotion ? 35 : 22;
+    const glassY = Math.max(-range, Math.min(range, (innerHeight / 2 - beyond.top) * (pointerMotion ? 0.045 : 0.028)));
     document.querySelector('.glass').style.translate = `0 ${glassY}px`;
   }
 
@@ -99,8 +102,12 @@
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       resetTransforms();
-      document.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('is-visible'));
-    } else requestPaint();
+      revealObserver?.disconnect();
+      revealTargets.forEach(el => el.classList.add('is-visible'));
+    } else {
+      if (revealObserver) observeReveals(true);
+      requestPaint();
+    }
   }
 
   motionButton.addEventListener('click', () => setMotion(!motion, true));
@@ -130,18 +137,32 @@
     if (!document.hidden) requestPaint();
   });
 
-  // Content is visible by default. Only successfully observed headings are prepared for reveals.
+  function observeReveals(preserveVisible = false) {
+    revealObserver.disconnect();
+    revealTargets.forEach(el => {
+      el.classList.add('reveal-ready');
+      if (!motion) { el.classList.add('is-visible'); return; }
+      const bounds = el.getBoundingClientRect();
+      const alreadyOnScreen = bounds.top < innerHeight - 24 && bounds.bottom > 0;
+      if (preserveVisible && alreadyOnScreen) el.classList.add('is-visible');
+      else el.classList.remove('is-visible');
+      if (!el.classList.contains('is-visible')) revealObserver.observe(el);
+    });
+  }
+
+  // All devices share the same reveal system. Without JS or with motion off, content is visible.
   if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => {
+    revealObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
         entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
+        revealObserver.unobserve(entry.target);
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' });
-    document.querySelectorAll('[data-reveal]').forEach(el => {
-      el.classList.add('reveal-ready');
-      observer.observe(el);
+    }, { threshold: 0.05, rootMargin: '0px 0px -24px 0px' });
+    observeReveals();
+    document.addEventListener('focusin', event => {
+      const target = event.target.closest('[data-reveal]');
+      if (target) { target.classList.add('is-visible'); revealObserver.unobserve(target); }
     });
   }
 
